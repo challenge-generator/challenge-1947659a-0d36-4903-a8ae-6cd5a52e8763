@@ -1,0 +1,78 @@
+server:
+  port: 8080
+  netty:
+    connection-timeout: 2s
+    idle-timeout: 15s
+
+spring:
+  application:
+    name: payments-service
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/payments_db
+    username: postgres
+    password: postgres
+    pool:
+      enabled: true
+      initial-size: 5
+      max-size: 20
+      max-idle-time: 30m
+      validation-query: SELECT 1
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+  health:
+    resilience4jcircuitbreakers:
+      enabled: true
+    r2dbc:
+      enabled: true
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      antifraudService:
+        baseConfig: customCircuitBreakerConfig
+        registerHealthIndicator: true
+      riskBureauService:
+        baseConfig: customCircuitBreakerConfig
+        registerHealthIndicator: true
+  retry:
+    instances:
+      antifraudService:
+        baseConfig: customRetryConfig
+        registerHealthIndicator: true
+      riskBureauService:
+        baseConfig: customRetryConfig
+        registerHealthIndicator: true
+  bulkhead:
+    instances:
+      antifraudService:
+        baseConfig: customBulkheadConfig
+        registerHealthIndicator: true
+      riskBureauService:
+        baseConfig: customBulkheadConfig
+        registerHealthIndicator: true
+  timelimiter:
+    instances:
+      antifraudService:
+        timeoutDuration: 2s
+        cancelRunningFuture: true
+      riskBureauService:
+        timeoutDuration: 2s
+        cancelRunningFuture: true
+
+logging:
+  level:
+    root: INFO
+    com.pragma.payments: DEBUG
+    org.springframework.r2dbc: DEBUG
+    io.r2dbc.postgresql.QUERY: DEBUG
+    io.r2dbc.postgresql.PARAM: DEBUG
+    io.github.resilience4j: INFO
